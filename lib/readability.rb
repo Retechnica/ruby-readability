@@ -21,35 +21,35 @@ module Readability
     }.freeze
     
     REGEXES = {
-        :unlikelyCandidatesRe => /combx|comment|community|disqus|extra|foot|header|menu|remark|rss|shoutbox|sidebar|sponsor|ad-break|agegate|pagination|pager|popup/i,
-        :okMaybeItsACandidateRe => /and|article|body|column|main|shadow/i,
-        :positiveRe => /article|body|content|entry|hentry|main|page|pagination|post|text|blog|story/i,
-        :negativeRe => /combx|comment|com-|contact|foot|footer|footnote|masthead|media|meta|outbrain|promo|related|scroll|shoutbox|sidebar|sponsor|shopping|tags|tool|widget/i,
-        :divToPElementsRe => /<(a|blockquote|dl|div|img|ol|p|pre|table|ul)/i,
-        :replaceBrsRe => /(<br[^>]*>[ \n\r\t]*){2,}/i,
-        :replaceFontsRe => /<(\/?)font[^>]*>/i,
-        :trimRe => /^\s+|\s+$/,
-        :normalizeRe => /\s{2,}/,
-        :killBreaksRe => /(<br\s*\/?>(\s|&nbsp;?)*){1,}/,
-        :videoRe => /http:\/\/(www\.)?(youtube|vimeo)\.com/i
+      :unlikelyCandidatesRe   => /combx|comment|community|disqus|extra|foot|header|menu|remark|rss|shoutbox|sidebar|sponsor|ad-break|agegate|pagination|pager|popup/i,
+      :okMaybeItsACandidateRe => /and|article|body|column|main|shadow/i,
+      :positiveRe             => /article|body|content|entry|hentry|main|page|pagination|post|text|blog|story/i,
+      :negativeRe             => /combx|comment|com-|contact|foot|footer|footnote|masthead|media|meta|outbrain|promo|related|scroll|shoutbox|sidebar|sponsor|shopping|tags|tool|widget/i,
+      :divToPElementsRe       => /<(a|blockquote|dl|div|img|ol|p|pre|table|ul)/i,
+      :replaceBrsRe           => /(<br[^>]*>[ \n\r\t]*){2,}/i,
+      :replaceFontsRe         => /<(\/?)font[^>]*>/i,
+      :trimRe                 => /^\s+|\s+$/,
+      :normalizeRe            => /\s{2,}/,
+      :killBreaksRe           => /(<br\s*\/?>(\s|&nbsp;?)*){1,}/,
+      :videoRe                => /http:\/\/(www\.)?(youtube|vimeo)\.com/i
     }
     
     attr_accessor :options, :html, :best_candidate, :candidates, :best_candidate_has_image
 
     def initialize(input, options = {})
       @options = DEFAULT_OPTIONS.merge(options)
-      @input = input
+      @input   = input
 
       if RUBY_VERSION =~ /^(1\.9|2)/ && !@options[:encoding]
-        @input = GuessHtmlEncoding.encode(@input, @options[:html_headers]) unless @options[:do_not_guess_encoding]
+        @input              = GuessHtmlEncoding.encode(@input, @options[:html_headers]) unless @options[:do_not_guess_encoding]
         @options[:encoding] = @input.encoding.to_s
       end
 
-      @input = @input.gsub(REGEXES[:replaceBrsRe], '</p><p>').gsub(REGEXES[:replaceFontsRe], '<\1span>')
+      @input                      = @input.gsub(REGEXES[:replaceBrsRe], '</p><p>').gsub(REGEXES[:replaceFontsRe], '<\1span>')
       @remove_unlikely_candidates = @options[:remove_unlikely_candidates]
-      @weight_classes = @options[:weight_classes]
-      @clean_conditionally = @options[:clean_conditionally]
-      @best_candidate_has_image = true
+      @weight_classes             = @options[:weight_classes]
+      @clean_conditionally        = @options[:clean_conditionally]
+      @best_candidate_has_image   = true
       make_html
       handle_exclusions!(@options[:whitelist], @options[:blacklist])
     end
@@ -86,7 +86,7 @@ module Readability
       @input = @html.to_s
     end
 
-    def make_html(whitelist=nil, blacklist=nil)
+    def make_html
       @html = Nokogiri::HTML(@input, nil, @options[:encoding])
       # In case document has no body, such as from empty string or redirect
       @html = Nokogiri::HTML('<body />', nil, @options[:encoding]) if @html.css('body').length == 0
@@ -112,34 +112,34 @@ module Readability
       return list_images if content.nil?
       elements = content.css("img").map(&:attributes)
 
-        elements.each do |element|
-          next unless element["src"]
+      elements.each do |element|
+        next unless element["src"]
 
-          url     = element["src"].value
-          height  = element["height"].nil?  ? 0 : element["height"].value.to_i
-          width   = element["width"].nil?   ? 0 : element["width"].value.to_i
+        url    = element["src"].value
+        height = element["height"].nil? ? 0 : element["height"].value.to_i
+        width  = element["width"].nil? ? 0 : element["width"].value.to_i
 
-          if url =~ /\Ahttps?:\/\//i && (height.zero? || width.zero?)
-            image   = get_image_size(url)
-            next unless image
-          else
-            image = {:width => width, :height => height}
-          end
-
-          image[:format] = File.extname(url).gsub(".", "")
-
-          if tested_images.include?(url)
-            debug("Image was tested: #{url}")
-            next
-          end
-
-          tested_images.push(url)
-          if image_meets_criteria?(image)
-            list_images << url
-          else
-            debug("Image discarded: #{url} - height: #{image[:height]} - width: #{image[:width]} - format: #{image[:format]}")
-          end
+        if url =~ /\Ahttps?:\/\//i && (height.zero? || width.zero?)
+          image = get_image_size(url)
+          next unless image
+        else
+          image = { :width => width, :height => height }
         end
+
+        image[:format] = File.extname(url).gsub(".", "")
+
+        if tested_images.include?(url)
+          debug("Image was tested: #{url}")
+          next
+        end
+
+        tested_images.push(url)
+        if image_meets_criteria?(image)
+          list_images << url
+        else
+          debug("Image discarded: #{url} - height: #{image[:height]} - width: #{image[:width]} - format: #{image[:format]}")
+        end
+      end
 
       (list_images.empty? and content != @html) ? images(@html, true) : list_images
     end
@@ -149,30 +149,30 @@ module Readability
     end
     
     def images_with_fqdn_uris(document = @html.dup, source_uri)
-      uri = URI.parse(source_uri)
-      host = uri.host
+      uri    = URI.parse(source_uri)
+      host   = uri.host
       scheme = uri.scheme
-      port = uri.port # defaults to 80
+      port   = uri.port # defaults to 80
 
       base = "#{scheme}://#{host}:#{port}/"
 
       images = []
       document.css("img").each do |elem|
         begin
-          elem['src'] = URI.join(base,elem['src']).to_s if URI.parse(elem['src']).host == nil 
+          elem['src'] = URI.join(base, elem['src']).to_s if URI.parse(elem['src']).host == nil
           images << elem['src'].to_s
         rescue URI::InvalidURIError => exc
           elem.remove
         end
       end
 
-      images(document,true)
+      images(document, true)
     end
 
     def get_image_size(url)
       w, h = FastImage.size(url)
       raise "Couldn't get size." if w.nil? || h.nil?
-      {:width => w, :height => h}
+      { :width => w, :height => h }
     rescue => e
       debug("Image error: #{e}")
       nil
@@ -260,7 +260,7 @@ module Readability
       # Things like preambles, content split by ads that we removed, etc.
 
       sibling_score_threshold = [10, best_candidate[:content_score] * 0.2].max
-      output = Nokogiri::XML::Node.new('div', @html)
+      output                  = Nokogiri::XML::Node.new('div', @html)
       best_candidate[:elem].parent.children.each do |sibling|
         append = false
         append = true if sibling == best_candidate[:elem]
@@ -269,17 +269,17 @@ module Readability
         if sibling.name.downcase == "p"
           link_density = get_link_density(sibling)
           node_content = sibling.text
-          node_length = node_content.length
+          node_length  = node_content.length
 
           append = if node_length > 80 && link_density < 0.25
-            true
-          elsif node_length < 80 && link_density == 0 && node_content =~ /\.( |$)/
-            true
-          end
+                     true
+                   elsif node_length < 80 && link_density == 0 && node_content =~ /\.( |$)/
+                     true
+                   end
         end
 
         if append
-          sibling_dup = sibling.dup # otherwise the state of the document in processing will change, thus creating side effects
+          sibling_dup      = sibling.dup # otherwise the state of the document in processing will change, thus creating side effects
           sibling_dup.name = "div" unless %w[div p].include?(sibling.name.downcase)
           output << sibling_dup
         end
@@ -311,21 +311,21 @@ module Readability
     def score_paragraphs(min_text_length)
       candidates = {}
       @html.css("p,td").each do |elem|
-        parent_node = elem.parent
+        parent_node       = elem.parent
         grand_parent_node = parent_node.respond_to?(:parent) ? parent_node.parent : nil
-        inner_text = elem.text
+        inner_text        = elem.text
 
         # If this paragraph is less than 25 characters, don't even count it.
         next if inner_text.length < min_text_length
 
-        candidates[parent_node] ||= score_node(parent_node)
+        candidates[parent_node]       ||= score_node(parent_node)
         candidates[grand_parent_node] ||= score_node(grand_parent_node) if grand_parent_node
 
         content_score = 1
         content_score += inner_text.split(',').length
         content_score += [(inner_text.length / 100).to_i, 3].min
 
-        candidates[parent_node][:content_score] += content_score
+        candidates[parent_node][:content_score]       += content_score
         candidates[grand_parent_node][:content_score] += content_score / 2.0 if grand_parent_node
       end
 
@@ -356,10 +356,10 @@ module Readability
     end
 
     ELEMENT_SCORES = {
-      'div' => 5,
+      'div'        => 5,
       'blockquote' => 3,
-      'form' => -3,
-      'th' => -5
+      'form'       => -3,
+      'th'         => -5
     }.freeze
 
     def score_node(elem)
@@ -392,12 +392,12 @@ module Readability
           end
         else
           # wrap text nodes in p tags
-#          elem.children.each do |child|
-#            if child.text?
-#              debug("wrapping text node with a p")
-#              child.swap("<p>#{child.text}</p>")
-#            end
-#          end
+          #          elem.children.each do |child|
+          #            if child.text?
+          #              debug("wrapping text node with a p")
+          #              child.swap("<p>#{child.text}</p>")
+          #            end
+          #          end
         end
       end
     end
@@ -422,14 +422,14 @@ module Readability
       clean_conditionally(node, candidates, "table, ul, div")
 
       # We'll sanitize all elements using a whitelist
-      base_whitelist = @options[:tags] || %w[div p]
+      base_whitelist               = @options[:tags] || %w[div p]
       # We'll add whitespace instead of block elements,
       # so a<br>b will have a nice space between them
       base_replace_with_whitespace = %w[br hr h1 h2 h3 h4 h5 h6 dl dd ol li ul address blockquote center]
 
       # Use a hash for speed (don't want to make a million calls to include?)
-      whitelist = Hash.new
-      base_whitelist.each {|tag| whitelist[tag] = true }
+      whitelist                    = Hash.new
+      base_whitelist.each { |tag| whitelist[tag] = true }
       replace_with_whitespace = Hash.new
       base_replace_with_whitespace.each { |tag| replace_with_whitespace[tag] = true }
 
@@ -455,33 +455,33 @@ module Readability
 
       end
 
-      s = Nokogiri::XML::Node::SaveOptions
+      s         = Nokogiri::XML::Node::SaveOptions
       save_opts = s::NO_DECLARATION | s::NO_EMPTY_TAGS | s::AS_XHTML
-      html = node.serialize(:save_with => save_opts)
+      html      = node.serialize(:save_with => save_opts)
 
       # Get rid of duplicate whitespace
-      return html.gsub(/[\r\n\f]+/, "\n" )
+      return html.gsub(/[\r\n\f]+/, "\n")
     end
 
     def clean_conditionally(node, candidates, selector)
       return unless @clean_conditionally
       node.css(selector).each do |el|
-        weight = class_weight(el)
+        weight        = class_weight(el)
         content_score = candidates[el] ? candidates[el][:content_score] : 0
-        name = el.name.downcase
+        name          = el.name.downcase
         
         if weight + content_score < 0
           el.remove
           debug("Conditionally cleaned #{name}##{el[:id]}.#{el[:class]} with weight #{weight} and content score #{content_score} because score + content score was less than zero.")
         elsif el.text.count(",") < 10
-          counts = %w[p img li a embed input].inject({}) { |m, kind| m[kind] = el.css(kind).length; m }
-          counts["li"] -= 100
+          counts        = %w[p img li a embed input].inject({}) { |m, kind| m[kind] = el.css(kind).length; m }
+          counts["li"]  -= 100
 
           # For every img under a noscript tag discount one from the count to avoid double counting
           counts["img"] -= el.css("noscript").css("img").length
-                
-          content_length = el.text.strip.length  # Count the text length excluding any surrounding whitespace
-          link_density = get_link_density(el)
+
+          content_length = el.text.strip.length # Count the text length excluding any surrounding whitespace
+          link_density   = get_link_density(el)
 
           reason = clean_conditionally_reason?(name, counts, content_length, options, weight, link_density)
           if reason
