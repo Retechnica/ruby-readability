@@ -23,7 +23,6 @@ Gem::Specification.new do |s|
   s.add_dependency 'fastimage', '~> 1.2.13'
 
   s.add_development_dependency "fakeweb", "~> 1.3.0"
-  s.add_development_dependency "rspec", ">= 2.8"
-  s.add_development_dependency "rspec-expectations", ">= 2.8"
+  s.add_development_dependency "rspec", ">= 3.2.0"
   s.add_development_dependency "rr", ">= 1.0"
 end
