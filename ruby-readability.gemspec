@@ -17,12 +17,11 @@ Gem::Specification.new do |s|
   s.executables   = `git ls-files -- bin/*`.split("\n").map { |f| File.basename(f) }
   s.require_paths = ["lib"]
 
-  s.add_dependency 'rake'
-  s.add_dependency 'nokogiri', '>= 1.6.0'
-  s.add_dependency 'guess_html_encoding', '>= 0.0.4'
-  s.add_dependency 'fastimage', '~> 1.2.13'
+  s.add_dependency 'rake', '>= 10.4.2'
+  s.add_dependency 'nokogiri', '>= 1.6.6.2'
+  s.add_dependency 'guess_html_encoding', '>= 0.0.10'
+  s.add_dependency 'fastimage', '~> 1.7.0'
 
   s.add_development_dependency "fakeweb", "~> 1.3.0"
   s.add_development_dependency "rspec", ">= 3.2.0"
-  s.add_development_dependency "rr", ">= 1.0"
 end

@@ -3,7 +3,7 @@
 require 'spec_helper'
 require 'readability'
 
-describe Readability do
+RSpec.describe Readability do
   before do
     @simple_html_fixture = <<-HTML
       <html>
@@ -117,7 +117,7 @@ describe Readability do
           </body>
         </html>
       HTML
-      do_not_allow(@doc).load_image(anything)
+
       expect(@doc.images).to eq([])
     end
 
