@@ -607,6 +607,26 @@ RSpec.describe Readability do
     end
   end
 
+  describe "guardian" do
+    let(:guardian) {
+      File.read(File.dirname(__FILE__) + "/fixtures/guardian.html")
+    }
+
+    it 'can show figcaption' do
+      doc = Readability::Document.new(guardian, tags: %w(div p figure figcaption))
+
+      content = doc.content
+      expect(content).to include("The US EPA is expected to formally declare its intent to begin regulating greenhouse gas")
+    end
+
+    it 'can show figure' do
+      doc = Readability::Document.new(guardian, tags: %w(div p figure figcaption))
+
+      content = doc.content
+      expect(content).to match(/figure/)
+    end
+  end
+
   describe "clean_conditionally_reason?" do
     let (:list_fixture) { "<div><p>test</p>#{'<li></li>' * 102}" }
 
