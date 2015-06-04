@@ -234,6 +234,7 @@ module Readability
 
       prepare_candidates
       article = get_article(@candidates, @best_candidate)
+      apply_rules(article)
 
       cleaned_article = sanitize(article, @candidates, options)
       if article.text.strip.length < options[:retry_length]
@@ -252,6 +253,25 @@ module Readability
         content
       else
         cleaned_article
+      end
+    end
+
+    def apply_rules(article)
+      if @options[:tags] && @options[:tags].include?('noscript')
+        # RULE TRANSFORMATION
+        # div:           -> div:
+        #   outer_img    ->   inner_img
+        #   noscript:    ->
+        #     inner_img  ->
+        article.css('noscript').each do |noscript|
+          image_sibling = noscript.parent.children.find { |sibling| sibling.name.downcase == 'img' }
+          image_child   = noscript.children.find { |child| child.name.downcase == 'img' }
+
+          if image_child && image_sibling
+            noscript.parent.children = image_child.dup
+            noscript.remove
+          end
+        end
       end
     end
 
@@ -281,6 +301,9 @@ module Readability
         if append
           sibling_dup      = sibling.dup # otherwise the state of the document in processing will change, thus creating side effects
           sibling_dup.name = "div" unless %w[div p].include?(sibling.name.downcase)
+          output << sibling_dup
+        elsif @options[:tags] && @options[:tags].include?('figure') && sibling.name.downcase == 'figure'
+          sibling_dup = sibling.dup
           output << sibling_dup
         end
       end
